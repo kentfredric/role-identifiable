@@ -1,10 +1,5 @@
 package Role::Identifiable::HasTags;
 
-use Type::Utils -all;
-use Types::Standard qw(Str ArrayRef);
-our $_Tag = declare 'Tag', as Str, where { length };
-
-
 use Moo::Role;
 # ABSTRACT: a thing with a list of tags
 
@@ -39,10 +34,22 @@ sub tags {
 
 has instance_tags => (
   is     => 'ro',
-  isa    => ArrayRef[ $_Tag ],
   reader => '_instance_tags',
   init_arg => 'tags',
   default  => sub { [] },
+  isa      => sub {
+    # Apropos of ArrayRef[ declare( as Str, where { length } ) ]
+    # Extracted from Types::Standard -- kentnl 2015-02-18
+    die 'instance_tags must be an ArrayRef[ Str ]'
+        unless defined $_[0] and ref $_[0] eq 'ARRAY';
+
+    for my $item ( @{ $_[0] } ) {
+      die 'entries in instance_tags must be strings'
+          unless defined $item and do { ref $item eq 'SCALAR' or ref (\(my $val = $item)) eq 'SCALAR' };
+      die 'entries in instance_tags must be length >= 1'
+          unless length $item;
+    }
+  },
 );
 
 has _default_tags => (
@@ -75,7 +82,5 @@ sub _build_default_tags {
 }
 
 no Moo::Role;
-no Type::Utils;
-no Types::Standard;
 
 1;

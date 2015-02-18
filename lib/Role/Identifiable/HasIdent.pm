@@ -1,7 +1,5 @@
 package Role::Identifiable::HasIdent;
 
-use Types::Standard qw(Str);
-use Type::Utils qw(declare as where);
 use Moo::Role;
 # ABSTRACT: a thing with an ident attribute
 
@@ -16,12 +14,19 @@ with whitespace.
 =cut
 
 has ident => (
-  is  => 'ro',
-  isa => declare(as Str, where { length && /\A\S/ && /\S\z/ }),
+  is       => 'ro',
   required => 1,
+  isa      => sub {
+    # Apropos of type Str with { length && /\A\S/ && /\S\z/ }
+    # extracted from Types::Standard -- kentnl 2015-02-18
+    die 'ident must be a string'
+        unless defined $_[0] and do { ref $_[0] eq 'SCALAR' or ref (\(my $val = $_[0])) eq 'SCALAR' };
+    die 'ident must have non-zero length'
+        unless length $_[0];
+    die 'ident must not start or end with whitespace'
+        unless $_[0] =~/\A\S/ && $_[0] =~ /\S\z/;
+  },
 );
 
 no Moo::Role;
-no Types::Standard;
-no Type::Utils;
 1;
